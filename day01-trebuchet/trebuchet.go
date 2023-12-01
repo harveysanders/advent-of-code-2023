@@ -25,21 +25,21 @@ func (t Treb) ParseCalibrationDoc(input io.Reader) (int, error) {
 	var nums []int
 
 	for scr.Scan() {
-		line := scr.Bytes()
-		matches := t.numRE.FindAll(line, -1)
+		line := scr.Text()
+		matches := t.numRE.FindAllString(line, -1)
 		var digits strings.Builder
 		var firstDigit string
 		var lastDigit string
 
 		switch len(matches) {
 		case 0:
-			return 0, fmt.Errorf("no digits found in %q", string(line))
+			return 0, fmt.Errorf("no digits found in %q", line)
 		case 1:
-			firstDigit = wordToN(string(matches[0]))
+			firstDigit = wordToN(matches[0])
 			lastDigit = firstDigit
 		default:
-			firstDigit = wordToN(string(matches[0]))
-			lastDigit = wordToN(string(matches[len(matches)-1]))
+			firstDigit = wordToN(matches[0])
+			lastDigit = wordToN(matches[len(matches)-1])
 		}
 
 		digits.WriteString(firstDigit)
