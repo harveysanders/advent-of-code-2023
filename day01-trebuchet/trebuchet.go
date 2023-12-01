@@ -8,10 +8,6 @@ import (
 	"strconv"
 )
 
-func main() {
-
-}
-
 func ParseCalibrationDoc(input io.Reader) (int, error) {
 	scr := bufio.NewScanner(input)
 
