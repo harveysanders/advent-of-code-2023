@@ -87,11 +87,11 @@ func TestParseCalibrationDocFull(t *testing.T) {
 		},
 	}
 
-	f, err := inputFiles.Open("input/input.txt")
-	require.NoError(t, err)
-
-	for _, tc := range testCases[1:] {
+	for _, tc := range testCases {
 		t.Run(tc.description, func(t *testing.T) {
+			f, err := inputFiles.Open("input/input.txt")
+			require.NoError(t, err)
+
 			parser := trebuchet.New(tc.numberRE)
 			gotSum, err := parser.ParseCalibrationDoc(f)
 			require.NoError(t, err)
