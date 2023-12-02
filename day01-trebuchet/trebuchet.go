@@ -10,23 +10,46 @@ import (
 )
 
 type Treb struct {
-	numRE *regexp.Regexp
+	includeWords bool // If true, spelled out numbers (i.e. "eight") will count as valid digits.
 }
 
-func New(numberRegExp string) *Treb {
+// New creates a new calibration document parser. Passing true for includeWords will inform the parser to include spelled-out numbers while parsing.
+func New(includeWords bool) *Treb {
 	return &Treb{
-		numRE: regexp.MustCompile(numberRegExp),
+		includeWords: includeWords,
 	}
 }
 
 func (t Treb) ParseCalibrationDoc(input io.Reader) (int, error) {
 	scr := bufio.NewScanner(input)
+	digitRE := regexp.MustCompile(`\d{1}`)
+	// Go's RegExp implementation does not support lookahead, I'm using this
+	// markers map to "mark" the English representation with the Arabic numeral.
+	// Since the arabic numeral are near the middle of the words, this will handle overlaps like "oneight" in "bhdf315nineoneightzlp".
+	// "oneight" -> "o1ei8ht" -> [["1"],["8"]]
+	markers := map[string]string{
+		"one":   "o1e",
+		"two":   "t2o",
+		"three": "th3ee",
+		"four":  "f4ur",
+		"five":  "f5ve",
+		"six":   "s6x",
+		"seven": "se7en",
+		"eight": "ei8ht",
+		"nine":  "n9ne",
+	}
 
 	var nums []int
-
 	for scr.Scan() {
 		line := scr.Text()
-		matches := t.numRE.FindAllString(line, -1)
+
+		if t.includeWords {
+			for old, new := range markers {
+				line = strings.ReplaceAll(line, old, new)
+			}
+		}
+
+		matches := digitRE.FindAllString(line, -1)
 		var digits strings.Builder
 		var firstDigit string
 		var lastDigit string
@@ -35,11 +58,11 @@ func (t Treb) ParseCalibrationDoc(input io.Reader) (int, error) {
 		case 0:
 			return 0, fmt.Errorf("no digits found in %q", line)
 		case 1:
-			firstDigit = wordToN(matches[0])
+			firstDigit = matches[0]
 			lastDigit = firstDigit
 		default:
-			firstDigit = wordToN(matches[0])
-			lastDigit = wordToN(matches[len(matches)-1])
+			firstDigit = matches[0]
+			lastDigit = matches[len(matches)-1]
 		}
 
 		digits.WriteString(firstDigit)
@@ -58,29 +81,4 @@ func (t Treb) ParseCalibrationDoc(input io.Reader) (int, error) {
 	}
 
 	return sum, nil
-}
-
-// WordToN takes a spelled out number and converts it to the arabic numeral representation. If the input can not be transformed to the arabic represent, the value is returned unchanged.
-// Example:
-// wordToN("three") -> "3"
-// wordToN("3") -> "3"
-// wordToN("taco") -> "taco"
-func wordToN(word string) string {
-	nums := map[string]string{
-		"one":   "1",
-		"two":   "2",
-		"three": "3",
-		"four":  "4",
-		"five":  "5",
-		"six":   "6",
-		"seven": "7",
-		"eight": "8",
-		"nine":  "9",
-	}
-
-	n, ok := nums[string(word)]
-	if !ok {
-		return string(word)
-	}
-	return n
 }
