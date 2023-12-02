@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"math"
 	"strconv"
 	"strings"
 )
@@ -66,6 +67,16 @@ func (g *Game) Parse(data string) error {
 	return nil
 }
 
+// FewestCubes returns the fewest possible amount of cubes for each color to play the given game.
+func (g *Game) FewestCubes() (red, green, blue int) {
+	for _, s := range g.Sets {
+		red = int(math.Max(float64(s.Red), float64(red)))
+		green = int(math.Max(float64(s.Green), float64(green)))
+		blue = int(math.Max(float64(s.Blue), float64(blue)))
+	}
+	return red, green, blue
+}
+
 // A bag contains any positive number of red, green, and blue cubes.
 type Bag struct {
 	red   int // Number of red cubes.
@@ -125,4 +136,15 @@ func (r *Record) ValidGameIDs(b Bag) []int {
 		}
 	}
 	return results
+}
+
+// Part2 calculated the fewest possible cubes for each game, calculates the power of those counts for each game, then returns the sum of all the powers.
+func (r *Record) Part2() int {
+	sum := 0
+	for _, game := range r.games {
+		red, green, blue := game.FewestCubes()
+		power := red * green * blue
+		sum += power
+	}
+	return sum
 }
