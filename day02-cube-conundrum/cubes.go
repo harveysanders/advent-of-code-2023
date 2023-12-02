@@ -1,7 +1,9 @@
 package cubes
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 )
@@ -89,4 +91,38 @@ func (b *Bag) ValidateGame(game Game) bool {
 		}
 	}
 	return true
+}
+
+type Record struct {
+	games []Game
+}
+
+func (r *Record) Decode(rdr io.Reader) error {
+	r.games = make([]Game, 0)
+
+	scr := bufio.NewScanner(rdr)
+	for scr.Scan() {
+		if scr.Err() != nil {
+			return fmt.Errorf("scr.Scan(): %w", scr.Err())
+		}
+
+		line := scr.Text()
+		game := Game{}
+		if err := game.Parse(line); err != nil {
+			return fmt.Errorf("game.Parse(): %w - line: %q", err, line)
+		}
+		r.games = append(r.games, game)
+	}
+	return nil
+}
+
+// ValidGameIDs returns a list of valid game IDs for a given bag.
+func (r *Record) ValidGameIDs(b Bag) []int {
+	results := make([]int, 0)
+	for _, g := range r.games {
+		if b.ValidateGame(g) {
+			results = append(results, g.ID)
+		}
+	}
+	return results
 }
