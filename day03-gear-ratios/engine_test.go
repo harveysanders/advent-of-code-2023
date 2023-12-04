@@ -67,6 +67,16 @@ func TestIsPartNum(t *testing.T) {
 var inputFiles embed.FS
 
 func TestSumPartNums(t *testing.T) {
+	sampleInput := io.NopCloser(strings.NewReader(`467..114..
+...*......
+..35..633.
+......#...
+617*......
+.....+.58.
+..592.....
+......755.
+...$.*....
+.664.598..`))
 	fullInput, err := inputFiles.Open("input/input.txt")
 	require.NoError(t, err)
 
@@ -76,17 +86,8 @@ func TestSumPartNums(t *testing.T) {
 		wantSum int
 	}{
 		{
-			name: "Part 1 sample",
-			input: io.NopCloser(strings.NewReader(`467..114..
-...*......
-..35..633.
-......#...
-617*......
-.....+.58.
-..592.....
-......755.
-...$.*....
-.664.598..`)),
+			name:    "Part 1 sample",
+			input:   sampleInput,
 			wantSum: 4361,
 		},
 		{
@@ -106,7 +107,52 @@ func TestSumPartNums(t *testing.T) {
 
 			got, err := schematics.PartNumSum()
 			require.NoError(t, err)
+			require.Equal(t, tc.wantSum, got)
+		})
+	}
+}
 
+func TestFindGears(t *testing.T) {
+	sampleInput := io.NopCloser(strings.NewReader(`467..114..
+...*......
+..35..633.
+......#...
+617*......
+.....+.58.
+..592.....
+......755.
+...$.*....
+.664.598..`))
+	fullInput, err := inputFiles.Open("input/input.txt")
+	require.NoError(t, err)
+
+	testCases := []struct {
+		name    string
+		input   io.ReadCloser
+		wantSum int
+	}{
+		{
+			name:    "Part 2 sample",
+			input:   sampleInput,
+			wantSum: 467835,
+		},
+		{
+			name:    "Part 2 Full",
+			input:   fullInput,
+			wantSum: 0,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			defer tc.input.Close()
+
+			schematics := engine.Schematic{}
+			err := schematics.Parse(tc.input)
+			require.NoError(t, err)
+
+			got, err := schematics.FindGears()
+			require.NoError(t, err)
 			require.Equal(t, tc.wantSum, got)
 		})
 	}
