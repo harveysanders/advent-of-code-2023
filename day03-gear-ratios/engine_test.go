@@ -139,7 +139,7 @@ func TestFindGears(t *testing.T) {
 		{
 			name:    "Part 2 Full",
 			input:   fullInput,
-			wantSum: 0,
+			wantSum: 75847567,
 		},
 	}
 

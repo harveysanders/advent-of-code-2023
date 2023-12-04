@@ -169,12 +169,8 @@ func (s *Schematic) FindGears() (int, error) {
 
 	sum := 0
 	for _, g := range s.gears {
-		ratio := 1
 		if len(g) == 2 {
-			for _, n := range g {
-				ratio *= n.Value
-			}
-			sum += ratio
+			sum += g[0].Value * g[1].Value
 		}
 	}
 	return sum, nil
