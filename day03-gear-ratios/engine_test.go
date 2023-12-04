@@ -1,6 +1,7 @@
 package engine_test
 
 import (
+	"embed"
 	"io"
 	"strings"
 	"testing"
@@ -62,8 +63,21 @@ func TestIsPartNum(t *testing.T) {
 	require.True(t, isPartNum)
 }
 
+//go:embed input/*
+var inputFiles embed.FS
+
 func TestSumPartNums(t *testing.T) {
-	input := io.NopCloser(strings.NewReader(`467..114..
+	fullInput, err := inputFiles.Open("input/input.txt")
+	require.NoError(t, err)
+
+	testCases := []struct {
+		name    string
+		input   io.ReadCloser
+		wantSum int
+	}{
+		{
+			name: "Part 1 sample",
+			input: io.NopCloser(strings.NewReader(`467..114..
 ...*......
 ..35..633.
 ......#...
@@ -72,15 +86,28 @@ func TestSumPartNums(t *testing.T) {
 ..592.....
 ......755.
 ...$.*....
-.664.598..`))
+.664.598..`)),
+			wantSum: 4361,
+		},
+		{
+			name:    "Part 1 Full",
+			input:   fullInput,
+			wantSum: 539433,
+		},
+	}
 
-	schematics := engine.Schematic{}
-	err := schematics.Parse(input)
-	require.NoError(t, err)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			defer tc.input.Close()
 
-	wantPartNums := []int{467, 35, 633, 617, 592, 755, 664, 598}
-	got, err := schematics.PartNums()
-	require.NoError(t, err)
+			schematics := engine.Schematic{}
+			err := schematics.Parse(tc.input)
+			require.NoError(t, err)
 
-	require.Equal(t, wantPartNums, got)
+			got, err := schematics.PartNumSum()
+			require.NoError(t, err)
+
+			require.Equal(t, tc.wantSum, got)
+		})
+	}
 }

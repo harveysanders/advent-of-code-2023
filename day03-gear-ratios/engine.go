@@ -22,8 +22,8 @@ type Number struct {
 
 type Schematic struct {
 	matrix []string
-	maxX   int
-	maxY   int
+	width  int
+	height int
 }
 
 func (s *Schematic) Parse(r io.ReadCloser) error {
@@ -38,9 +38,9 @@ func (s *Schematic) Parse(r io.ReadCloser) error {
 		s.matrix = append(s.matrix, line)
 	}
 
-	s.maxY = len(s.matrix)
-	if s.maxY > 0 {
-		s.maxX = len(s.matrix[0])
+	s.height = len(s.matrix)
+	if s.height > 0 {
+		s.width = len(s.matrix[0])
 	}
 	return nil
 }
@@ -69,21 +69,23 @@ func (s *Schematic) CollectNumbers() ([]Number, error) {
 }
 
 func (s *Schematic) IsPartNum(n Number) bool {
-	leftAdjX := int(math.Max(float64(n.Location.X-1), 0))
-	rightAdjX := int(math.Min(float64(n.Location.X+n.Size), float64(s.maxX)))
-	topAdjY := int(math.Max(float64(n.Location.Y-1), 0))
-	bottomAdjY := int(math.Min(float64(n.Location.Y+1), float64(s.maxY)))
-
 	symRE := regexp.MustCompile(`[^\d|\.]`)
+
+	leftAdjX := int(math.Max(float64(n.Location.X-1), 0))
+	rightAdjX := int(math.Min(float64(n.Location.X+n.Size), float64(s.width)))
+	topAdjY := int(math.Max(float64(n.Location.Y-1), 0))
+	bottomAdjY := int(math.Min(float64(n.Location.Y+1), float64(s.height)))
+
+	rightEdge := math.Min(float64(rightAdjX+1), float64(s.width-1))
 	if n.Location.Y != 0 {
-		upperLine := s.matrix[topAdjY][leftAdjX : rightAdjX+1]
+		upperLine := s.matrix[topAdjY][leftAdjX:int(rightEdge)]
 		if symRE.MatchString(upperLine) {
 			return true
 		}
 	}
 
-	if n.Location.Y != s.maxY {
-		bottomLine := s.matrix[bottomAdjY][leftAdjX : rightAdjX+1]
+	if n.Location.Y != s.height-1 {
+		bottomLine := s.matrix[bottomAdjY][leftAdjX:int(rightEdge)]
 		if symRE.MatchString(bottomLine) {
 			return true
 		}
@@ -96,8 +98,8 @@ func (s *Schematic) IsPartNum(n Number) bool {
 		}
 	}
 
-	if n.Location.X+n.Size != s.maxX {
-		char := s.matrix[n.Location.Y][rightAdjX : rightAdjX+1]
+	if n.Location.X+n.Size != s.width {
+		char := s.matrix[n.Location.Y][rightAdjX:int(rightEdge)]
 		if symRE.MatchString(char) {
 			return true
 		}
@@ -118,4 +120,16 @@ func (s *Schematic) PartNums() ([]int, error) {
 		}
 	}
 	return partNums, nil
+}
+
+func (s *Schematic) PartNumSum() (int, error) {
+	nums, err := s.PartNums()
+	if err != nil {
+		return 0, fmt.Errorf("s.PartNums(): %w", err)
+	}
+	sum := 0
+	for _, n := range nums {
+		sum += n
+	}
+	return sum, nil
 }
