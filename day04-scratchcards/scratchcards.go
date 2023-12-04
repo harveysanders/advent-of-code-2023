@@ -14,6 +14,7 @@ type ScratchCard struct {
 	ID      int   // The ID of the card.
 	Winning []int // List of winning numbers, i.e. if your any of your numbers match a winning number, you win points.
 	Yours   []int // Your pre-selected numbers. If any of these numbers match a winning number, you win!
+	Copies  int   // Number of times the cards has been copied.
 }
 
 func (s *ScratchCard) Decode(raw string) error {
@@ -54,6 +55,12 @@ func (s *ScratchCard) Decode(raw string) error {
 }
 
 func (s ScratchCard) Points() int {
+	n := s.Matches()
+	return int(math.Pow(2, float64(n-1)))
+}
+
+// Matches returns the number of winning number matches on the card.
+func (s ScratchCard) Matches() int {
 	winners := make([]int, 0)
 	for _, yourN := range s.Yours {
 		if !slices.Contains(s.Winning, yourN) {
@@ -61,7 +68,7 @@ func (s ScratchCard) Points() int {
 		}
 		winners = append(winners, yourN)
 	}
-	return int(math.Pow(2, float64(len(winners)-1)))
+	return len(winners)
 }
 
 type Cards []ScratchCard
@@ -93,4 +100,18 @@ func (cs Cards) Points() int {
 		sum += c.Points()
 	}
 	return sum
+}
+
+func (cs Cards) CalcCopies() int {
+	for _, c := range cs {
+		matches := c.Matches()
+		for i := c.ID; i < c.ID+matches; i++ {
+			cs[i].Copies += 1 + c.Copies
+		}
+	}
+	totalCards := 0
+	for _, c := range cs {
+		totalCards += 1 + c.Copies
+	}
+	return totalCards
 }
