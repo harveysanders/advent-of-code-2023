@@ -1,14 +1,17 @@
 package trebuchet_test
 
 import (
-	"embed"
 	"io"
+	"os"
 	"strings"
 	"testing"
 
 	trebuchet "github.com/harveysanders/advent-of-code-2023/day01-trebuchet"
+	"github.com/harveysanders/advent-of-code-2023/internal/github"
 	"github.com/stretchr/testify/require"
 )
+
+var isCI = os.Getenv("CI") != ""
 
 type comparator int
 
@@ -17,9 +20,6 @@ const (
 	GREATER_THAN
 	LESS_THAN
 )
-
-//go:embed input/*
-var inputFiles embed.FS
 
 func TestParseCalibrationDocSample(t *testing.T) {
 	testCases := []struct {
@@ -98,13 +98,15 @@ func TestParseCalibrationDocFull(t *testing.T) {
 		},
 	}
 
+	input, err := github.GetInputFile(1, !isCI)
+	require.NoError(t, err)
+
 	for _, tc := range testCases {
 		t.Run(tc.description, func(t *testing.T) {
-			f, err := inputFiles.Open("input/input.txt")
-			require.NoError(t, err)
+			input.Seek(0, io.SeekStart)
 
 			parser := trebuchet.New(tc.part2Mode)
-			gotSum, err := parser.ParseCalibrationDoc(f)
+			gotSum, err := parser.ParseCalibrationDoc(input)
 			require.NoError(t, err)
 
 			switch tc.comparator {

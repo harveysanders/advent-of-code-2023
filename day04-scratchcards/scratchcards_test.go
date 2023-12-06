@@ -1,15 +1,18 @@
 package scratchcards_test
 
 import (
-	"embed"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 	"testing"
 
 	scratchcards "github.com/harveysanders/advent-of-code-2023/day04-scratchcards"
+	"github.com/harveysanders/advent-of-code-2023/internal/github"
 	"github.com/stretchr/testify/require"
 )
+
+var isCI = os.Getenv("CI") != ""
 
 func TestParseCards(t *testing.T) {
 	input := io.NopCloser(strings.NewReader(`Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53
@@ -66,9 +69,6 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11
 	}
 }
 
-//go:embed input/*
-var inputFiles embed.FS
-
 func TestCardsPoints(t *testing.T) {
 	sampleInput := io.NopCloser(strings.NewReader(`Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53
 Card 2: 13 32 20 16 61 | 61 30 68 82 17 32 24 19
@@ -78,7 +78,7 @@ Card 5: 87 83 26 28 32 | 88 30 70 12 93 22 82 36
 Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11
 `))
 
-	fullInput, err := inputFiles.Open("input/input.txt")
+	fullInput, err := github.GetInputFile(4, !isCI)
 	require.NoError(t, err)
 
 	testCases := []struct {
@@ -119,7 +119,7 @@ Card 5: 87 83 26 28 32 | 88 30 70 12 93 22 82 36
 Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11
 `))
 
-	fullInput, err := inputFiles.Open("input/input.txt")
+	fullInput, err := github.GetInputFile(4, !isCI)
 	require.NoError(t, err)
 
 	testCases := []struct {

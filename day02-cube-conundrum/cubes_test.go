@@ -1,17 +1,17 @@
 package cubes_test
 
 import (
-	"embed"
 	"io"
+	"os"
 	"strings"
 	"testing"
 
 	cubes "github.com/harveysanders/advent-of-code-2023/day02-cube-conundrum"
+	"github.com/harveysanders/advent-of-code-2023/internal/github"
 	"github.com/stretchr/testify/require"
 )
 
-//go:embed input/*.txt
-var inputFiles embed.FS
+var isCI = os.Getenv("CI") != ""
 
 func TestValidateGame(t *testing.T) {
 	testCases := []struct {
@@ -104,12 +104,14 @@ Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green
 }
 
 func TestPart1FullInput(t *testing.T) {
+	fullInput, err := github.GetInputFile(2, !isCI)
+	require.NoError(t, err)
+
 	t.Run("part 1 full input", func(t *testing.T) {
-		input, err := inputFiles.Open("input/input.txt")
-		require.NoError(t, err)
+		fullInput.Seek(0, io.SeekStart)
 
 		var record cubes.Record
-		err = record.Decode(input)
+		err = record.Decode(fullInput)
 		require.NoError(t, err)
 
 		ids := record.ValidGameIDs(*cubes.NewBag(12, 13, 14))
@@ -124,7 +126,7 @@ func TestPart1FullInput(t *testing.T) {
 }
 
 func TestPart2Sample(t *testing.T) {
-	fullInput, err := inputFiles.Open("input/input.txt")
+	fullInput, err := github.GetInputFile(2, !isCI)
 	require.NoError(t, err)
 
 	testCases := []struct {

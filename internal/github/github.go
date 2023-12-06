@@ -1,6 +1,7 @@
 package github
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -11,12 +12,24 @@ import (
 	gh "github.com/google/go-github/v57/github"
 )
 
-func GetInputFile(day int, useLocal bool) (io.ReadCloser, error) {
+type File struct {
+	io.Closer
+	io.ReadSeeker
+}
+
+// GetInputFile fetches a file from the local disk if useLocal is true or from my private advent-of-code-inputs GitHub repo.
+// The reader returned can be reset to the beginning.
+//
+// Ex:
+//
+//	r, _ := GetInputFile(1, true)
+//	r.Seek(0, io.SeekStart)
+func GetInputFile(day int, useLocal bool) (io.ReadSeekCloser, error) {
 	if useLocal {
 		dayDir := fmt.Sprintf("day%02d", day)
 		path, err := filepath.Abs(filepath.Join("..", "internal", "inputs", dayDir, "input.txt"))
 		if err != nil {
-			return io.NopCloser(nil), fmt.Errorf("filepath.Abs: %w", err)
+			return File{}, fmt.Errorf("filepath.Abs: %w", err)
 		}
 		f, err := os.Open(path)
 		if err != nil {
@@ -26,20 +39,28 @@ func GetInputFile(day int, useLocal bool) (io.ReadCloser, error) {
 	}
 	token := os.Getenv("GITHUB_TOKEN")
 	client := gh.NewClient(nil).WithAuthToken(token)
-	input, resp, err := client.Repositories.DownloadContents(context.Background(),
+	f, resp, err := client.Repositories.DownloadContents(context.Background(),
 		"harveysanders",
 		"advent-of-code-inputs",
 		"2023/day05/input.txt",
 		&gh.RepositoryContentGetOptions{},
 	)
 	if err != nil {
-		return input, fmt.Errorf("github.DownloadContents(): %w", err)
+		return File{}, fmt.Errorf("github.DownloadContents(): %w", err)
 	}
 
 	if resp.StatusCode >= 300 {
 		log.Fatalf("%s", resp.Status)
-		return input, fmt.Errorf("Github API HTTP: %s", resp.Status)
+		return File{}, fmt.Errorf("Github API HTTP: %s", resp.Status)
 	}
 
-	return input, nil
+	// Create a ReadSeeker so the stream can be reset (read again).
+	b, err := io.ReadAll(f)
+	if err != nil {
+		return nil, err
+	}
+
+	input := bytes.NewReader(b)
+
+	return File{f, input}, nil
 }

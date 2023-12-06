@@ -1,14 +1,17 @@
 package engine_test
 
 import (
-	"embed"
 	"io"
+	"os"
 	"strings"
 	"testing"
 
 	engine "github.com/harveysanders/advent-of-code-2023/day03-gear-ratios"
+	"github.com/harveysanders/advent-of-code-2023/internal/github"
 	"github.com/stretchr/testify/require"
 )
+
+var isCI = os.Getenv("CI") != ""
 
 func TestCollectNumbers(t *testing.T) {
 	input := io.NopCloser(strings.NewReader(`467..114..
@@ -63,9 +66,6 @@ func TestIsPartNum(t *testing.T) {
 	require.True(t, isPartNum)
 }
 
-//go:embed input/*
-var inputFiles embed.FS
-
 func TestSumPartNums(t *testing.T) {
 	sampleInput := io.NopCloser(strings.NewReader(`467..114..
 ...*......
@@ -77,7 +77,8 @@ func TestSumPartNums(t *testing.T) {
 ......755.
 ...$.*....
 .664.598..`))
-	fullInput, err := inputFiles.Open("input/input.txt")
+	fullInput, err := github.GetInputFile(3, !isCI)
+
 	require.NoError(t, err)
 
 	testCases := []struct {
@@ -123,7 +124,8 @@ func TestFindGears(t *testing.T) {
 ......755.
 ...$.*....
 .664.598..`))
-	fullInput, err := inputFiles.Open("input/input.txt")
+
+	fullInput, err := github.GetInputFile(3, !isCI)
 	require.NoError(t, err)
 
 	testCases := []struct {
