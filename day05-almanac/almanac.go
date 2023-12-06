@@ -7,6 +7,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/harveysanders/advent-of-code-2023/day05-almanac/category"
 )
@@ -55,14 +56,40 @@ func (a Almanac) ConvertTo(src category.Name, dest category.Name, val int) (int,
 	return nextVal, nil
 }
 
-func (a Almanac) LowestLocation() (int, error) {
+func (a Almanac) LowestLocation(useRange bool) (int, error) {
 	lowest := math.MaxFloat64
-	for _, seed := range a.Seeds {
-		location, err := a.ConvertTo(category.Seed, category.Location, seed)
-		if err != nil {
-			return 0, err
+	if !useRange {
+		for _, seed := range a.Seeds {
+			location, err := a.ConvertTo(category.Seed, category.Location, seed)
+			if err != nil {
+				return 0, err
+			}
+			lowest = math.Min(lowest, float64(location))
 		}
-		lowest = math.Min(lowest, float64(location))
+		return int(lowest), nil
+	}
+
+	// Part 2 range mode
+	for i := 0; i < len(a.Seeds); i += 2 {
+		startTime := time.Now()
+
+		start := a.Seeds[i]
+		count := a.Seeds[i+1]
+		for seed := start; seed < start+count; seed++ {
+			if seed%int(math.Pow10(6)) == 0 {
+				fmt.Println(".")
+			}
+			location, err := a.ConvertTo(category.Seed, category.Location, seed)
+			if err != nil {
+				return 0, err
+			}
+			lowest = math.Min(lowest, float64(location))
+		}
+
+		fmt.Printf("loop: %d, elapsed(s): %d, lowest: %d\n",
+			i,
+			int(time.Since(startTime).Seconds()),
+			int(lowest))
 	}
 	return int(lowest), nil
 }
