@@ -17,7 +17,7 @@ func TestParse(t *testing.T) {
 Distance:  9  40  200
 `)
 
-	races, err := race.Parse(sample)
+	races, err := race.Parse(sample, false)
 	require.NoError(t, err)
 
 	require.Len(t, races, 3)
@@ -28,6 +28,19 @@ Distance:  9  40  200
 		require.Equal(t, wantTimes[i], r.Time)
 		require.Equal(t, wantDistances[i], r.Distance)
 	}
+}
+
+func TestParsePart2(t *testing.T) {
+	sample := strings.NewReader(`Time:      7  15   30
+Distance:  9  40  200
+`)
+
+	races, err := race.Parse(sample, true)
+	require.NoError(t, err)
+
+	require.Len(t, races, 1)
+	require.Equal(t, 71530, races[0].Time)
+	require.Equal(t, 940200, races[0].Distance)
 }
 
 func TestWinningTimes(t *testing.T) {
@@ -69,7 +82,7 @@ func TestWinningTimes(t *testing.T) {
 
 var isCI = os.Getenv("CI") == ""
 
-func TestDay1(t *testing.T) {
+func TestDayMarginOfError(t *testing.T) {
 	sample := strings.NewReader(`Time:      7  15   30
 Distance:  9  40  200
 `)
@@ -81,6 +94,8 @@ Distance:  9  40  200
 		name            string
 		input           io.ReadSeeker
 		wantErrorMargin int
+		part2           bool
+		skip            bool
 	}{
 		{
 			name:            "Part 1 sample",
@@ -92,15 +107,33 @@ Distance:  9  40  200
 			input:           fullInput,
 			wantErrorMargin: 4811940,
 		},
+		{
+			name:            "Part 2 sample",
+			input:           sample,
+			wantErrorMargin: 71503,
+			part2:           true,
+		},
+		{
+			name:            "Part 2 full",
+			input:           fullInput,
+			wantErrorMargin: 30077773,
+			part2:           true,
+			skip:            isCI,
+		},
 	}
 
 	for _, tc := range testCases {
-		_, err := tc.input.Seek(0, io.SeekStart)
-		require.NoError(t, err)
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.skip {
+				t.Skipf("Test %q skipped\n", tc.name)
+			}
+			_, err := tc.input.Seek(0, io.SeekStart)
+			require.NoError(t, err)
 
-		races, err := race.Parse(tc.input)
-		require.NoError(t, err)
-		got := races.MarginOfError()
-		require.Equal(t, tc.wantErrorMargin, got)
+			races, err := race.Parse(tc.input, tc.part2)
+			require.NoError(t, err)
+			got := races.MarginOfError()
+			require.Equal(t, tc.wantErrorMargin, got)
+		})
 	}
 }

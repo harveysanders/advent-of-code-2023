@@ -32,7 +32,7 @@ func (r Race) WinningTimes() []int {
 
 type Races []Race
 
-func Parse(data io.Reader) (Races, error) {
+func Parse(data io.Reader, mergeColumns bool) (Races, error) {
 	var races Races
 	scr := bufio.NewScanner(data)
 	for scr.Scan() {
@@ -43,6 +43,17 @@ func Parse(data io.Reader) (Races, error) {
 		line := scr.Text()
 		if strings.Contains(line, "Time") {
 			rawTimes := strings.Fields(strings.TrimSpace(strings.TrimPrefix(line, "Time:")))
+
+			if mergeColumns {
+				races = []Race{}
+				ms, err := strconv.Atoi(strings.Join(rawTimes, ""))
+				if err != nil {
+					return races, fmt.Errorf("strconv.Atoi(): %w", err)
+				}
+				races = append(races, Race{Time: ms})
+				continue
+			}
+
 			races = make([]Race, len(rawTimes))
 			for i, v := range rawTimes {
 				ms, err := strconv.Atoi(v)
@@ -56,6 +67,16 @@ func Parse(data io.Reader) (Races, error) {
 
 		if strings.Contains(line, "Distance") {
 			rawDists := strings.Fields(strings.TrimSpace(strings.TrimPrefix(line, "Distance:")))
+
+			if mergeColumns {
+				d, err := strconv.Atoi(strings.Join(rawDists, ""))
+				if err != nil {
+					return races, fmt.Errorf("strconv.Atoi(): %w", err)
+				}
+				races[0].Distance = d
+				continue
+			}
+
 			for i, v := range rawDists {
 				d, err := strconv.Atoi(v)
 				if err != nil {
