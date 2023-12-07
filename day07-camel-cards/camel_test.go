@@ -70,6 +70,7 @@ func TestHandType(t *testing.T) {
 		{labels: "QQQJA", wantType: camel.ThreeOfAKind},
 		{labels: "23456", wantType: camel.HighCard},
 		{labels: "23332", wantType: camel.FullHouse},
+		{labels: "AAAA9", wantType: camel.FourOfAKind},
 	}
 
 	for _, tc := range testCases {
@@ -149,26 +150,28 @@ QQQJA 483
 		{
 			name:       "full input part 1",
 			input:      fullInput,
-			wantTotal:  248402576,
-			comparator: testutil.GREATER_THAN,
+			wantTotal:  248569531,
+			comparator: testutil.EQUAL,
 		},
 	}
 
 	for _, tc := range testCases {
-		_, err := tc.input.Seek(0, io.SeekStart)
-		require.NoError(t, err)
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := tc.input.Seek(0, io.SeekStart)
+			require.NoError(t, err)
 
-		hands, err := camel.ParseHands(tc.input)
-		require.NoError(t, err)
+			hands, err := camel.ParseHands(tc.input)
+			require.NoError(t, err)
 
-		gotTotal := hands.TotalWinnings()
-		switch tc.comparator {
-		case testutil.EQUAL:
-			require.Equal(t, tc.wantTotal, gotTotal)
-		case testutil.GREATER_THAN:
-			require.Greater(t, gotTotal, tc.wantTotal)
-		case testutil.LESS_THAN:
-			require.Less(t, gotTotal, tc.wantTotal)
-		}
+			gotTotal := hands.TotalWinnings()
+			switch tc.comparator {
+			case testutil.EQUAL:
+				require.Equal(t, tc.wantTotal, gotTotal)
+			case testutil.GREATER_THAN:
+				require.Greater(t, gotTotal, tc.wantTotal)
+			case testutil.LESS_THAN:
+				require.Less(t, gotTotal, tc.wantTotal)
+			}
+		})
 	}
 }

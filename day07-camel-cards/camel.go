@@ -72,7 +72,7 @@ type Hand struct {
 	Bid   int
 }
 
-// Type finds the max number of matching cards and returns the associated HandType.
+// Type finds the number of sets of matching cards and returns the associated HandType.
 func (h Hand) Type() HandType {
 	counts := h.cardCounts()
 	pairs := []Label{}
@@ -85,9 +85,10 @@ func (h Hand) Type() HandType {
 	}
 	// If 4 of a kind or higher, use that for type
 	if maxMatches >= 4 {
-		return HandType(maxMatches)
+		return HandType(maxMatches + 1)
 	}
 
+	// # of pairs in the hand
 	nPairs := len(pairs)
 	if maxMatches == 3 {
 		if nPairs == 1 {
@@ -102,6 +103,10 @@ func (h Hand) Type() HandType {
 	return HighCard
 }
 
+// CardCounts returns a map of card labels to their counts in the hand.
+// Ex:
+//
+//	"JJQQ3" -> {"J":2, "Q": 2, "3": 1}
 func (h Hand) cardCounts() map[Label]int {
 	cardCounts := map[Label]int{}
 	for _, card := range h.Cards {
@@ -125,6 +130,7 @@ func (h Hand) String() string {
 	return s.String()
 }
 
+// ParseLabels takes a hand as a string, e.g. "K234J" and populates the hand struct.
 func (h *Hand) ParseLabels(raw string) {
 	labels := strings.Split(raw, "")
 	for i, l := range labels {
@@ -154,6 +160,7 @@ func (h Hands) Rank() {
 	})
 }
 
+// TotalWinnings ranks the hands by type, then calculates the winnings based on the hand's bid and rank.
 func (h Hands) TotalWinnings() int {
 	h.Rank()
 	var total float64
