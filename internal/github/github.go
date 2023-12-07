@@ -25,8 +25,8 @@ type File struct {
 //	r, _ := GetInputFile(1, true)
 //	r.Seek(0, io.SeekStart)
 func GetInputFile(day int, useLocal bool) (io.ReadSeekCloser, error) {
+	dayDir := fmt.Sprintf("day%02d", day)
 	if useLocal {
-		dayDir := fmt.Sprintf("day%02d", day)
 		path, err := filepath.Abs(filepath.Join("..", "internal", "inputs", dayDir, "input.txt"))
 		if err != nil {
 			return File{}, fmt.Errorf("filepath.Abs: %w", err)
@@ -42,7 +42,7 @@ func GetInputFile(day int, useLocal bool) (io.ReadSeekCloser, error) {
 	f, resp, err := client.Repositories.DownloadContents(context.Background(),
 		"harveysanders",
 		"advent-of-code-inputs",
-		"2023/day05/input.txt",
+		fmt.Sprintf("2023/%s/input.txt", dayDir),
 		&gh.RepositoryContentGetOptions{},
 	)
 	if err != nil {

@@ -103,7 +103,8 @@ func TestParseCalibrationDocFull(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.description, func(t *testing.T) {
-			input.Seek(0, io.SeekStart)
+			_, err = input.Seek(0, io.SeekStart)
+			require.NoError(t, err)
 
 			parser := trebuchet.New(tc.part2Mode)
 			gotSum, err := parser.ParseCalibrationDoc(input)

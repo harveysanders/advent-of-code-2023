@@ -3,6 +3,7 @@ package almanac_test
 import (
 	"fmt"
 	"io"
+	"os"
 	"strings"
 	"testing"
 
@@ -11,6 +12,8 @@ import (
 	"github.com/harveysanders/advent-of-code-2023/internal/github"
 	"github.com/stretchr/testify/require"
 )
+
+var isCI = os.Getenv("CI") != ""
 
 func TestConvert(t *testing.T) {
 	testCases := []struct {
@@ -230,7 +233,7 @@ humidity-to-location map:
 56 93 4
 `
 
-	fullInput, err := github.GetInputFile(5, true)
+	fullInput, err := github.GetInputFile(5, !isCI)
 	require.NoError(t, err)
 
 	testCases := []struct {

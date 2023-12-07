@@ -22,3 +22,4 @@ go.work
 input/
 inputs/
 .env
+.secrets

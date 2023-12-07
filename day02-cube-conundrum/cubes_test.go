@@ -108,7 +108,8 @@ func TestPart1FullInput(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("part 1 full input", func(t *testing.T) {
-		fullInput.Seek(0, io.SeekStart)
+		_, err := fullInput.Seek(0, io.SeekStart)
+		require.NoError(t, err)
 
 		var record cubes.Record
 		err = record.Decode(fullInput)

@@ -2,5 +2,6 @@
   "cSpell.words": [
     "nums",
     "Treb"
-  ]
+  ],
+  "go.testEnvFile": "${workspaceFolder}/.env.test"
 }
