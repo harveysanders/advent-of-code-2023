@@ -80,7 +80,7 @@ func TestWinningTimes(t *testing.T) {
 	}
 }
 
-var isCI = os.Getenv("CI") == ""
+var isCI = os.Getenv("CI") != ""
 
 func TestDayMarginOfError(t *testing.T) {
 	sample := strings.NewReader(`Time:      7  15   30

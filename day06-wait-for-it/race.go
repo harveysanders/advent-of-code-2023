@@ -24,7 +24,7 @@ func (r Race) WinningTimes() []int {
 		}
 	}
 	res := []int{}
-	for i, _ := range winners {
+	for i := range winners {
 		res = append(res, i)
 	}
 	return res
