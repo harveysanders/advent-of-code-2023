@@ -2,23 +2,13 @@ package trebuchet_test
 
 import (
 	"io"
-	"os"
 	"strings"
 	"testing"
 
 	trebuchet "github.com/harveysanders/advent-of-code-2023/day01-trebuchet"
 	"github.com/harveysanders/advent-of-code-2023/internal/github"
+	"github.com/harveysanders/advent-of-code-2023/internal/testutil"
 	"github.com/stretchr/testify/require"
-)
-
-var isCI = os.Getenv("CI") != ""
-
-type comparator int
-
-const (
-	EQUAL comparator = iota
-	GREATER_THAN
-	LESS_THAN
 )
 
 func TestParseCalibrationDocSample(t *testing.T) {
@@ -76,29 +66,29 @@ func TestParseCalibrationDocFull(t *testing.T) {
 		description string
 		part2Mode   bool
 		wantSum     int
-		comparator  comparator
+		comparator  testutil.Comparator
 	}{
 		{
 			description: "part 1 full input",
 			wantSum:     53651,
-			comparator:  EQUAL,
+			comparator:  testutil.EQUAL,
 		},
 		// This case is just to show how the comparator can help if the solution fails on the first run.
 		{
 			description: "part 2 full input (with failed solution hint)",
 			part2Mode:   true,
 			wantSum:     53896,
-			comparator:  LESS_THAN, // 53896 is too high!
+			comparator:  testutil.LESS_THAN, // 53896 is too high!
 		},
 		{
 			description: "part 2 full input",
 			part2Mode:   true,
 			wantSum:     53894,
-			comparator:  EQUAL,
+			comparator:  testutil.EQUAL,
 		},
 	}
 
-	input, err := github.GetInputFile(1, !isCI)
+	input, err := github.GetInputFile(1, !github.IsCIEnv)
 	require.NoError(t, err)
 
 	for _, tc := range testCases {
@@ -111,11 +101,11 @@ func TestParseCalibrationDocFull(t *testing.T) {
 			require.NoError(t, err)
 
 			switch tc.comparator {
-			case EQUAL:
+			case testutil.EQUAL:
 				require.Equal(t, tc.wantSum, gotSum)
-			case GREATER_THAN:
+			case testutil.GREATER_THAN:
 				require.Greater(t, gotSum, tc.wantSum)
-			case LESS_THAN:
+			case testutil.LESS_THAN:
 				require.Less(t, gotSum, tc.wantSum)
 			default:
 				require.Equal(t, tc.wantSum, gotSum)

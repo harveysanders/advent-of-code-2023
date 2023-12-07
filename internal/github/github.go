@@ -12,6 +12,8 @@ import (
 	gh "github.com/google/go-github/v57/github"
 )
 
+var IsCIEnv = os.Getenv("CI") != ""
+
 type File struct {
 	io.Closer
 	io.ReadSeeker

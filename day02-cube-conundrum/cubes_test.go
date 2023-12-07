@@ -2,7 +2,6 @@ package cubes_test
 
 import (
 	"io"
-	"os"
 	"strings"
 	"testing"
 
@@ -10,8 +9,6 @@ import (
 	"github.com/harveysanders/advent-of-code-2023/internal/github"
 	"github.com/stretchr/testify/require"
 )
-
-var isCI = os.Getenv("CI") != ""
 
 func TestValidateGame(t *testing.T) {
 	testCases := []struct {
@@ -104,7 +101,7 @@ Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green
 }
 
 func TestPart1FullInput(t *testing.T) {
-	fullInput, err := github.GetInputFile(2, !isCI)
+	fullInput, err := github.GetInputFile(2, !github.IsCIEnv)
 	require.NoError(t, err)
 
 	t.Run("part 1 full input", func(t *testing.T) {
@@ -127,7 +124,7 @@ func TestPart1FullInput(t *testing.T) {
 }
 
 func TestPart2Sample(t *testing.T) {
-	fullInput, err := github.GetInputFile(2, !isCI)
+	fullInput, err := github.GetInputFile(2, !github.IsCIEnv)
 	require.NoError(t, err)
 
 	testCases := []struct {

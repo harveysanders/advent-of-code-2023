@@ -3,7 +3,6 @@ package scratchcards_test
 import (
 	"fmt"
 	"io"
-	"os"
 	"strings"
 	"testing"
 
@@ -11,8 +10,6 @@ import (
 	"github.com/harveysanders/advent-of-code-2023/internal/github"
 	"github.com/stretchr/testify/require"
 )
-
-var isCI = os.Getenv("CI") != ""
 
 func TestParseCards(t *testing.T) {
 	input := io.NopCloser(strings.NewReader(`Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53
@@ -78,7 +75,7 @@ Card 5: 87 83 26 28 32 | 88 30 70 12 93 22 82 36
 Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11
 `))
 
-	fullInput, err := github.GetInputFile(4, !isCI)
+	fullInput, err := github.GetInputFile(4, !github.IsCIEnv)
 	require.NoError(t, err)
 
 	testCases := []struct {
@@ -119,7 +116,7 @@ Card 5: 87 83 26 28 32 | 88 30 70 12 93 22 82 36
 Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11
 `))
 
-	fullInput, err := github.GetInputFile(4, !isCI)
+	fullInput, err := github.GetInputFile(4, !github.IsCIEnv)
 	require.NoError(t, err)
 
 	testCases := []struct {

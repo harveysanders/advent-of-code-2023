@@ -3,7 +3,6 @@ package race_test
 import (
 	"fmt"
 	"io"
-	"os"
 	"strings"
 	"testing"
 
@@ -80,13 +79,11 @@ func TestWinningTimes(t *testing.T) {
 	}
 }
 
-var isCI = os.Getenv("CI") != ""
-
 func TestDayMarginOfError(t *testing.T) {
 	sample := strings.NewReader(`Time:      7  15   30
 Distance:  9  40  200
 `)
-	fullInput, err := github.GetInputFile(6, !isCI)
+	fullInput, err := github.GetInputFile(6, !github.IsCIEnv)
 	require.NoError(t, err)
 	defer fullInput.Close()
 
@@ -118,7 +115,7 @@ Distance:  9  40  200
 			input:           fullInput,
 			wantErrorMargin: 30077773,
 			part2:           true,
-			skip:            isCI,
+			skip:            github.IsCIEnv,
 		},
 	}
 

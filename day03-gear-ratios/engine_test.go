@@ -2,7 +2,6 @@ package engine_test
 
 import (
 	"io"
-	"os"
 	"strings"
 	"testing"
 
@@ -10,8 +9,6 @@ import (
 	"github.com/harveysanders/advent-of-code-2023/internal/github"
 	"github.com/stretchr/testify/require"
 )
-
-var isCI = os.Getenv("CI") != ""
 
 func TestCollectNumbers(t *testing.T) {
 	input := io.NopCloser(strings.NewReader(`467..114..
@@ -77,7 +74,7 @@ func TestSumPartNums(t *testing.T) {
 ......755.
 ...$.*....
 .664.598..`))
-	fullInput, err := github.GetInputFile(3, !isCI)
+	fullInput, err := github.GetInputFile(3, !github.IsCIEnv)
 
 	require.NoError(t, err)
 
@@ -125,7 +122,7 @@ func TestFindGears(t *testing.T) {
 ...$.*....
 .664.598..`))
 
-	fullInput, err := github.GetInputFile(3, !isCI)
+	fullInput, err := github.GetInputFile(3, !github.IsCIEnv)
 	require.NoError(t, err)
 
 	testCases := []struct {

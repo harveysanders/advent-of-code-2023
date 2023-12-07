@@ -2,8 +2,11 @@ package camel
 
 import (
 	"bufio"
+	"cmp"
 	"fmt"
 	"io"
+	"math"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -45,13 +48,19 @@ var cardValues = map[Label]int{
 type HandType int
 
 const (
-	FiveOfAKind  HandType = iota // FiveOfAKind is where all five cards have the same label: AAAAA.
-	FourOfAKind                  // FourOfAKind is where four cards have the same label and one card has a different label: AA8AA
-	ThreeOfAKind                 // ThreeOfAKind is where three cards have the same label, and the remaining two cards are each different from any other card in the hand: TTT98
-	TwoPair                      // TwoPair is where two cards share one label, two other cards share a second label, and the remaining card has a third label: 23432
+	HighCard     HandType = iota // HighCard is where all cards' labels are distinct: 23456
 	OnePair                      // OnePair is where two cards share one label, and the other three cards have a different label from the pair and each other: A23A4
-	HighCard                     // HighCard is where all cards' labels are distinct: 23456
+	TwoPair                      // TwoPair is where two cards share one label, two other cards share a second label, and the remaining card has a third label: 23432
+	ThreeOfAKind                 // ThreeOfAKind is where three cards have the same label, and the remaining two cards are each different from any other card in the hand: TTT98
+	FullHouse                    // A full house is where three cards have the same label, and the remaining two cards share a different label: 23332
+	FourOfAKind                  // FourOfAKind is where four cards have the same label and one card has a different label: AA8AA
+	FiveOfAKind                  // FiveOfAKind is where all five cards have the same label: AAAAA.
 )
+
+func (t HandType) String() string {
+	names := []string{"", "high card", "one pair", "two pair", "three of a kind", "four of a kind", "five of a kind"}
+	return names[t]
+}
 
 type Card struct {
 	Label Label
@@ -60,11 +69,103 @@ type Card struct {
 
 type Hand struct {
 	Cards [5]Card
-	Type  HandType
 	Bid   int
 }
 
-func ParseHands(r io.Reader) ([]Hand, error) {
+// Type finds the max number of matching cards and returns the associated HandType.
+func (h Hand) Type() HandType {
+	counts := h.cardCounts()
+	pairs := []Label{}
+	maxMatches := 0
+	for label, count := range counts {
+		maxMatches = int(math.Max(float64(maxMatches), float64(count)))
+		if count == 2 {
+			pairs = append(pairs, label)
+		}
+	}
+	// If 4 of a kind or higher, use that for type
+	if maxMatches >= 4 {
+		return HandType(maxMatches)
+	}
+
+	nPairs := len(pairs)
+	if maxMatches == 3 {
+		if nPairs == 1 {
+			return FullHouse
+		}
+		return ThreeOfAKind
+	}
+	if nPairs > 0 {
+		return HandType(nPairs)
+	}
+	// No pairs, all distinct
+	return HighCard
+}
+
+func (h Hand) cardCounts() map[Label]int {
+	cardCounts := map[Label]int{}
+	for _, card := range h.Cards {
+		count, ok := cardCounts[card.Label]
+		if !ok {
+			cardCounts[card.Label] = 1
+		}
+		cardCounts[card.Label] = count + 1
+	}
+	return cardCounts
+}
+
+func (h Hand) String() string {
+	var s strings.Builder
+	for _, c := range h.Cards {
+		if _, err := s.WriteString(string(c.Label)); err != nil {
+			fmt.Printf("s.WriteString(): %v, val: %q", err, c.Label)
+			return ""
+		}
+	}
+	return s.String()
+}
+
+func (h *Hand) ParseLabels(raw string) {
+	labels := strings.Split(raw, "")
+	for i, l := range labels {
+		label := Label(l)
+		h.Cards[i] = Card{
+			Label: Label(label),
+			value: cardValues[label],
+		}
+	}
+}
+
+type Hands []Hand
+
+// Rank sorts the hands in place, ordering by type strength, lowest rank first.
+func (h Hands) Rank() {
+	slices.SortFunc(h, func(a, b Hand) int {
+		if n := cmp.Compare(a.Type(), b.Type()); n != 0 {
+			return n
+		}
+		// If names are equal, order by card value
+		for i, aCard := range a.Cards {
+			if n := cmp.Compare(aCard.value, b.Cards[i].value); n != 0 {
+				return n
+			}
+		}
+		return 0
+	})
+}
+
+func (h Hands) TotalWinnings() int {
+	h.Rank()
+	var total float64
+	for i, hand := range h {
+		rank := i + 1
+		handWinnings := hand.Bid * rank
+		total += float64(handWinnings)
+	}
+	return int(total)
+}
+
+func ParseHands(r io.Reader) (Hands, error) {
 	hands := make([]Hand, 0)
 	scr := bufio.NewScanner(r)
 
@@ -79,7 +180,6 @@ func ParseHands(r io.Reader) ([]Hand, error) {
 			return hands, fmt.Errorf("invalid hand-bid line: %q", line)
 		}
 
-		labels := strings.Split(p[0], "")
 		rawBid := p[1]
 		bid, err := strconv.Atoi(rawBid)
 		if err != nil {
@@ -90,13 +190,8 @@ func ParseHands(r io.Reader) ([]Hand, error) {
 			Cards: [5]Card{},
 			Bid:   bid,
 		}
-		for i, l := range labels {
-			label := Label(l)
-			hand.Cards[i] = Card{
-				Label: Label(label),
-				value: cardValues[label],
-			}
-		}
+
+		hand.ParseLabels(p[0])
 		hands = append(hands, hand)
 	}
 
