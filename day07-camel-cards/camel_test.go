@@ -108,12 +108,13 @@ QQQJA 483
 	for _, tc := range testCases {
 		label := strings.Join(tc.wantOrder, ",")
 		t.Run(label, func(t *testing.T) {
-			hands, err := camel.ParseHands(tc.input)
+			game := camel.NewGame()
+			err := game.Parse(tc.input)
 			require.NoError(t, err)
-			hands.Rank()
+			game.Rank()
 
 			got := []string{}
-			for _, h := range hands {
+			for _, h := range game.Hands {
 				got = append(got, h.String())
 			}
 			require.Equal(t, tc.wantOrder, got)
@@ -140,6 +141,7 @@ QQQJA 483
 		input      io.ReadSeeker
 		wantTotal  int
 		comparator testutil.Comparator // How to compare want, got. For example GREATER_THAN means got should be greater than the expected value.
+		options    camel.GameOption
 	}{
 		{
 			name:       "sample part 1",
@@ -153,17 +155,31 @@ QQQJA 483
 			wantTotal:  248569531,
 			comparator: testutil.EQUAL,
 		},
+		{
+			name:       "sample part 2",
+			input:      sample,
+			wantTotal:  5905,
+			comparator: testutil.EQUAL,
+			options:    camel.WithWildcard(camel.LabelJ),
+		},
+		{
+			name:       "sample part 2",
+			input:      fullInput,
+			wantTotal:  253939737,
+			comparator: testutil.LESS_THAN,
+			options:    camel.WithWildcard(camel.LabelJ),
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			_, err := tc.input.Seek(0, io.SeekStart)
 			require.NoError(t, err)
-
-			hands, err := camel.ParseHands(tc.input)
+			game := camel.NewGame(tc.options)
+			err = game.Parse(tc.input)
 			require.NoError(t, err)
 
-			gotTotal := hands.TotalWinnings()
+			gotTotal := game.TotalWinnings()
 			switch tc.comparator {
 			case testutil.EQUAL:
 				require.Equal(t, tc.wantTotal, gotTotal)

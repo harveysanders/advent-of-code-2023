@@ -62,6 +62,39 @@ func (t HandType) String() string {
 	return names[t]
 }
 
+type Game struct {
+	wildcard Label
+	Hands    Hands
+}
+
+type GameOption func(*Game)
+
+func WithWildcard(card Label) GameOption {
+	return func(g *Game) {
+		g.wildcard = card
+	}
+}
+
+func NewGame(opts ...GameOption) *Game {
+	g := &Game{}
+	for _, o := range opts {
+		if o == nil {
+			continue
+		}
+		o(g)
+	}
+	return g
+}
+
+func (g *Game) Parse(r io.Reader) error {
+	hands, err := ParseHands(r, withGame(g))
+	if err != nil {
+		return err
+	}
+	g.Hands = hands
+	return nil
+}
+
 type Card struct {
 	Label Label
 	value int
@@ -70,6 +103,7 @@ type Card struct {
 type Hand struct {
 	Cards [5]Card
 	Bid   int
+	game  *Game
 }
 
 // Type finds the number of sets of matching cards and returns the associated HandType.
@@ -77,9 +111,13 @@ func (h Hand) Type() HandType {
 	counts := h.cardCounts()
 	pairs := []Label{}
 	maxMatches := 0
+	wildCardCount := 0
+	if h.game != nil {
+		wildCardCount = counts[h.game.wildcard]
+	}
 	for label, count := range counts {
-		maxMatches = int(math.Max(float64(maxMatches), float64(count)))
-		if count == 2 {
+		maxMatches = int(math.Max(float64(maxMatches+wildCardCount), float64(count)))
+		if count+wildCardCount == 2 {
 			pairs = append(pairs, label)
 		}
 	}
@@ -130,14 +168,31 @@ func (h Hand) String() string {
 	return s.String()
 }
 
+func (h Hand) hasWildcard() int {
+	if h.game == nil {
+		return 0
+	}
+	if h.game.wildcard == "" {
+		return 0
+	}
+	if strings.Contains(h.String(), string(h.game.wildcard)) {
+		return 1
+	}
+	return 0
+}
+
 // ParseLabels takes a hand as a string, e.g. "K234J" and populates the hand struct.
 func (h *Hand) ParseLabels(raw string) {
 	labels := strings.Split(raw, "")
 	for i, l := range labels {
 		label := Label(l)
+		value := cardValues[label]
+		if h.game != nil && h.game.wildcard == label {
+			value = 1
+		}
 		h.Cards[i] = Card{
 			Label: Label(label),
-			value: cardValues[label],
+			value: value,
 		}
 	}
 }
@@ -145,12 +200,19 @@ func (h *Hand) ParseLabels(raw string) {
 type Hands []Hand
 
 // Rank sorts the hands in place, ordering by type strength, lowest rank first.
-func (h Hands) Rank() {
-	slices.SortFunc(h, func(a, b Hand) int {
+func (g Game) Rank() {
+	slices.SortFunc(g.Hands, func(a, b Hand) int {
 		if n := cmp.Compare(a.Type(), b.Type()); n != 0 {
 			return n
 		}
-		// If names are equal, order by card value
+
+		// TODO: Fix me
+		// need to compare hands with wildcards as reg values
+		if n := cmp.Compare(a.hasWildcard(), b.hasWildcard()); n != 0 {
+			return n
+		}
+
+		// If typws are equal, order by card value
 		for i, aCard := range a.Cards {
 			if n := cmp.Compare(aCard.value, b.Cards[i].value); n != 0 {
 				return n
@@ -161,10 +223,10 @@ func (h Hands) Rank() {
 }
 
 // TotalWinnings ranks the hands by type, then calculates the winnings based on the hand's bid and rank.
-func (h Hands) TotalWinnings() int {
-	h.Rank()
+func (g Game) TotalWinnings() int {
+	g.Rank()
 	var total float64
-	for i, hand := range h {
+	for i, hand := range g.Hands {
 		rank := i + 1
 		handWinnings := hand.Bid * rank
 		total += float64(handWinnings)
@@ -172,7 +234,15 @@ func (h Hands) TotalWinnings() int {
 	return int(total)
 }
 
-func ParseHands(r io.Reader) (Hands, error) {
+type handOption func(h *Hand)
+
+func withGame(g *Game) handOption {
+	return func(h *Hand) {
+		h.game = g
+	}
+}
+
+func ParseHands(r io.Reader, opts ...handOption) (Hands, error) {
 	hands := make([]Hand, 0)
 	scr := bufio.NewScanner(r)
 
@@ -196,6 +266,9 @@ func ParseHands(r io.Reader) (Hands, error) {
 		hand := Hand{
 			Cards: [5]Card{},
 			Bid:   bid,
+		}
+		for _, o := range opts {
+			o(&hand)
 		}
 
 		hand.ParseLabels(p[0])
