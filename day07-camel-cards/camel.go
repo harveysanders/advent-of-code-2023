@@ -107,12 +107,12 @@ type Hand struct {
 }
 
 // Type finds the number of sets of matching cards and returns the associated HandType.
-func (h Hand) Type() HandType {
+func (h Hand) Type(useWildcard bool) HandType {
 	counts := h.cardCounts()
 	pairs := []Label{}
 	maxMatches := 0
 	wildCardCount := 0
-	if h.game != nil {
+	if useWildcard && h.game != nil {
 		wildCardCount = counts[h.game.wildcard]
 	}
 	for label, count := range counts {
@@ -200,33 +200,39 @@ func (h *Hand) ParseLabels(raw string) {
 type Hands []Hand
 
 // Rank sorts the hands in place, ordering by type strength, lowest rank first.
-func (g Game) Rank() {
-	slices.SortFunc(g.Hands, func(a, b Hand) int {
-		if n := cmp.Compare(a.Type(), b.Type()); n != 0 {
+func (g Game) Rank() Hands {
+	copy := slices.Clone(g.Hands)
+	slices.SortStableFunc(copy, cmpHands(g.wildcard != ""))
+	return copy
+}
+
+func cmpHands(useWildcard bool) func(a Hand, b Hand) int {
+	return func(a, b Hand) int {
+		if n := cmp.Compare(a.Type(useWildcard), b.Type(useWildcard)); n != 0 {
 			return n
 		}
 
-		// TODO: Fix me
-		// need to compare hands with wildcards as reg values
-		if n := cmp.Compare(a.hasWildcard(), b.hasWildcard()); n != 0 {
-			return n
+		if useWildcard {
+			if n := cmpHands(false)(a, b); n != 0 {
+				return n
+			}
 		}
 
-		// If typws are equal, order by card value
+		// If types are equal, order by card value
 		for i, aCard := range a.Cards {
 			if n := cmp.Compare(aCard.value, b.Cards[i].value); n != 0 {
 				return n
 			}
 		}
 		return 0
-	})
+	}
 }
 
 // TotalWinnings ranks the hands by type, then calculates the winnings based on the hand's bid and rank.
 func (g Game) TotalWinnings() int {
-	g.Rank()
+	ranked := g.Rank()
 	var total float64
-	for i, hand := range g.Hands {
+	for i, hand := range ranked {
 		rank := i + 1
 		handWinnings := hand.Bid * rank
 		total += float64(handWinnings)

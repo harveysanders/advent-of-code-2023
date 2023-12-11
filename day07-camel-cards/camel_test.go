@@ -77,7 +77,7 @@ func TestHandType(t *testing.T) {
 		t.Run(tc.labels, func(t *testing.T) {
 			hand := camel.Hand{}
 			hand.ParseLabels(tc.labels)
-			require.Equal(t, tc.wantType.String(), hand.Type().String())
+			require.Equal(t, tc.wantType.String(), hand.Type(false).String())
 		})
 	}
 }
@@ -88,6 +88,8 @@ T55J5 684
 KK677 28
 KTJJT 220
 QQQJA 483
+AQQQA 23
+QKKKQ 13
 `)
 	testCases := []struct {
 		input     io.Reader
@@ -101,6 +103,8 @@ QQQJA 483
 				"KK677", // two pair (K > T)
 				"T55J5", // three of a kind
 				"QQQJA", // three of a kind (Q > T)
+				"QKKKQ",
+				"AQQQA",
 			},
 		},
 	}
@@ -163,10 +167,10 @@ QQQJA 483
 			options:    camel.WithWildcard(camel.LabelJ),
 		},
 		{
-			name:       "sample part 2",
+			name:       "full part 2",
 			input:      fullInput,
 			wantTotal:  253939737,
-			comparator: testutil.LESS_THAN,
+			comparator: testutil.EQUAL,
 			options:    camel.WithWildcard(camel.LabelJ),
 		},
 	}
