@@ -27,6 +27,21 @@ func TestExtrapolate(t *testing.T) {
 	}
 }
 
+func TestExtrapolateReverse(t *testing.T) {
+	input := strings.NewReader(`0 3 6 9 12 15
+1 3 6 10 15 21
+10 13 16 21 30 45
+`)
+	report, err := oasis.ParseReport(input)
+	require.NoError(t, err)
+
+	wantExtrapolatedValues := []int{-3, 0, 5}
+	for i, wantV := range wantExtrapolatedValues {
+		got := report.Measurements[i].ExtrapolateReverse()
+		require.Equal(t, wantV, got)
+	}
+}
+
 func TestTotal(t *testing.T) {
 	sample := strings.NewReader(`0 3 6 9 12 15
 1 3 6 10 15 21
@@ -38,9 +53,10 @@ func TestTotal(t *testing.T) {
 	defer fullInput.Close()
 
 	testCases := []struct {
-		name      string
-		input     io.ReadSeeker
-		wantTotal int
+		name                 string
+		input                io.ReadSeeker
+		wantTotal            int
+		reverseExtrapolation bool
 	}{
 		{
 			name:      "sample part 1",
@@ -52,6 +68,18 @@ func TestTotal(t *testing.T) {
 			input:     fullInput,
 			wantTotal: 2075724761,
 		},
+		{
+			name:                 "sample part 2",
+			input:                sample,
+			wantTotal:            2,
+			reverseExtrapolation: true,
+		},
+		{
+			name:                 "full input part 2",
+			input:                fullInput,
+			wantTotal:            1072,
+			reverseExtrapolation: true,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -62,7 +90,7 @@ func TestTotal(t *testing.T) {
 			report, err := oasis.ParseReport(tc.input)
 			require.NoError(t, err)
 
-			got := report.Total()
+			got := report.Total(tc.reverseExtrapolation)
 			require.Equal(t, tc.wantTotal, got)
 		})
 	}

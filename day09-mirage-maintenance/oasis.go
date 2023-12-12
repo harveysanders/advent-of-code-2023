@@ -12,10 +12,14 @@ type Report struct {
 	Measurements []Measurement
 }
 
-func (r Report) Total() int {
+func (r Report) Total(reverse bool) int {
 	sum := 0
 	for _, m := range r.Measurements {
-		sum += m.Extrapolate()
+		if reverse {
+			sum += m.ExtrapolateReverse()
+		} else {
+			sum += m.Extrapolate()
+		}
 	}
 	return sum
 }
@@ -25,6 +29,14 @@ type Measurement struct {
 }
 
 func (m Measurement) Extrapolate() int {
+	return m.extrapolate(false)
+}
+
+func (m Measurement) ExtrapolateReverse() int {
+	return m.extrapolate(true)
+}
+
+func (m Measurement) extrapolate(reverse bool) int {
 	list := m.history
 	allDiffs := [][]int{list}
 	isStart := true
@@ -33,7 +45,20 @@ func (m Measurement) Extrapolate() int {
 		list = diffEach(list)
 		allDiffs = append(allDiffs, list)
 	}
+	if reverse {
+		return calcFirstValues(allDiffs)
+	}
 	return calcLastValues(allDiffs)
+}
+
+func calcFirstValues(allDiffs [][]int) int {
+	values := []int{0}
+	for i := len(allDiffs) - 1; i > -1; i-- {
+		diffs := allDiffs[i]
+		v := diffs[0] - values[len(allDiffs)-1-i]
+		values = append(values, v)
+	}
+	return values[len(values)-1]
 }
 
 func calcLastValues(allDiffs [][]int) int {
