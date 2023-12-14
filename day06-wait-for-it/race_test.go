@@ -134,3 +134,18 @@ Distance:  9  40  200
 		})
 	}
 }
+
+func BenchmarkMarginOfError(b *testing.B) {
+	fullInput, err := github.GetInputFile(6, !github.IsCIEnv)
+	require.NoError(b, err)
+	defer fullInput.Close()
+
+	mergeColumns := true
+	races, err := race.Parse(fullInput, mergeColumns)
+	require.NoError(b, err)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		races.MarginOfError()
+	}
+}
