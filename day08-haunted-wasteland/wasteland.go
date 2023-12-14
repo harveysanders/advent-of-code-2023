@@ -158,7 +158,7 @@ func (n *NodeMap) TraverseParallel(start, end string) (int, error) {
 	// run them each one step at a time until they all are on a node that ends with the end parameter ("Z")
 	for {
 		var wg sync.WaitGroup
-		for i, _ := range n.ghosts {
+		for i := range n.ghosts {
 			wg.Add(1)
 			go func(n *NodeMap, idx int) {
 				n.moveGhost(idx)
