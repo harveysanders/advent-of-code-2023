@@ -29,7 +29,7 @@ type File struct {
 func GetInputFile(day int, useLocal bool) (io.ReadSeekCloser, error) {
 	dayDir := fmt.Sprintf("day%02d", day)
 	if useLocal {
-		path, err := filepath.Abs(filepath.Join("..", "internal", "inputs", dayDir, "input.txt"))
+		path, err := filepath.Abs(filepath.Join("..", "..", "advent-of-code-inputs", "2023", dayDir, "input.txt"))
 		if err != nil {
 			return File{}, fmt.Errorf("filepath.Abs: %w", err)
 		}
