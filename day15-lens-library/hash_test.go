@@ -13,7 +13,7 @@ import (
 func TestCalculate(t *testing.T) {
 	input := `HASH`
 
-	got := hash.Calculate(input, 0)
+	got := hash.Calculate(input)
 	require.Equal(t, 52, got)
 }
 
@@ -47,6 +47,45 @@ func TestSumInitSeq(t *testing.T) {
 			got, err := hash.SumInitSeq(tc.input)
 			require.NoError(t, err)
 			require.Equal(t, tc.wantSum, got)
+		})
+	}
+}
+
+func TestFocusPower(t *testing.T) {
+	sample := strings.NewReader(`rn=1,cm-,qp=3,cm=2,qp-,pc=4,ot=9,ab=5,pc-,pc=6,ot=7
+`)
+	fullInput, err := github.GetInputFile(15, !github.IsCIEnv)
+	require.NoError(t, err)
+
+	testCases := []struct {
+		name      string
+		input     io.ReadSeeker
+		wantPower int
+	}{
+		{
+			name:      "sample, part 2",
+			input:     sample,
+			wantPower: 145,
+		},
+		{
+			name:      "full, part 2",
+			input:     fullInput,
+			wantPower: 245223,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := tc.input.Seek(0, io.SeekStart)
+			require.NoError(t, err)
+
+			hm := hash.New()
+			err = hm.Initialize(tc.input)
+			require.NoError(t, err)
+
+			got, err := hm.FocusingPower()
+			require.NoError(t, err)
+			require.Equal(t, tc.wantPower, got)
 		})
 	}
 }
